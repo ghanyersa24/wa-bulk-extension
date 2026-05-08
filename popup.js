@@ -464,6 +464,16 @@ function checkWaTab() {
 checkWaTab();
 setInterval(checkWaTab, 2000);
 
+function checkRunning() {
+    chrome.runtime.sendMessage({ type: 'IS_RUNNING' }, (res) => {
+        const running = !!res?.running;
+        startBtn.style.display = running ? 'none' : '';
+        stopBtn.style.display = running ? '' : 'none';
+    });
+}
+checkRunning();
+setInterval(checkRunning, 800);
+
 chrome.storage.local.remove('progress');
 
 // === Start/Stop ===
@@ -485,6 +495,8 @@ startBtn.addEventListener('click', () => {
     });
 
     statusEl.textContent = 'Memulai...';
+    startBtn.style.display = 'none';
+    stopBtn.style.display = '';
 });
 
 stopBtn.addEventListener('click', () => {

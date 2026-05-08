@@ -26,6 +26,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         findWhatsAppTab().then(tab => sendResponse({ ok: !!tab, tabId: tab?.id || null }));
         return true;
     }
+
+    if (msg.type === 'IS_RUNNING') {
+        sendResponse({ running });
+        return false;
+    }
 });
 
 async function findWhatsAppTab() {
