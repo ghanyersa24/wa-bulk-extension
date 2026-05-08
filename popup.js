@@ -26,6 +26,7 @@ chrome.storage.local.get(['contacts', 'message', 'minDelay', 'maxDelay'], (data)
     cleanupContacts();
     renderChips();
     updateVarHint();
+    if (typeof renderPreview === 'function') renderPreview();
 });
 
 function persist() {
@@ -38,6 +39,223 @@ function persist() {
 }
 
 [messageEl, minDelayEl, maxDelayEl].forEach(el => el.addEventListener('input', persist));
+
+// === Formatting toolbar ===
+const FMT_WRAP = {
+    bold: { open: '*', close: '*' },
+    italic: { open: '_', close: '_' },
+    strike: { open: '~', close: '~' },
+    mono: { open: '```', close: '```' }
+};
+
+document.querySelectorAll('.fmt-btn[data-fmt]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const fmt = btn.dataset.fmt;
+        applyFormat(fmt);
+    });
+});
+
+document.getElementById('varBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    insertAtCursor(messageEl, '{');
+    showAutocomplete();
+});
+
+messageEl.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'b') { e.preventDefault(); applyFormat('bold'); }
+        else if (e.key === 'i') { e.preventDefault(); applyFormat('italic'); }
+    }
+});
+
+function applyFormat(fmt) {
+    if (fmt === 'bullet') return applyLinePrefix('• ');
+    if (fmt === 'quote') return applyLinePrefix('> ');
+
+    const wrap = FMT_WRAP[fmt];
+    if (!wrap) return;
+
+    const start = messageEl.selectionStart;
+    const end = messageEl.selectionEnd;
+    const value = messageEl.value;
+    const selected = value.slice(start, end);
+
+    const before = value.slice(0, start);
+    const after = value.slice(end);
+    const newText = wrap.open + (selected || 'teks') + wrap.close;
+
+    messageEl.value = before + newText + after;
+    const cursorStart = start + wrap.open.length;
+    const cursorEnd = cursorStart + (selected ? selected.length : 4);
+    messageEl.setSelectionRange(cursorStart, cursorEnd);
+    messageEl.focus();
+    messageEl.dispatchEvent(new Event('input'));
+}
+
+function applyLinePrefix(prefix) {
+    const start = messageEl.selectionStart;
+    const value = messageEl.value;
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    messageEl.value = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+    messageEl.setSelectionRange(start + prefix.length, start + prefix.length);
+    messageEl.focus();
+    messageEl.dispatchEvent(new Event('input'));
+}
+
+function insertAtCursor(el, text) {
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    el.value = el.value.slice(0, start) + text + el.value.slice(end);
+    el.setSelectionRange(start + text.length, start + text.length);
+    el.focus();
+    el.dispatchEvent(new Event('input'));
+}
+
+// === Autocomplete variabel saat ketik { ===
+const acEl = document.getElementById('autocomplete');
+let acItems = [];
+let acIndex = 0;
+
+function getAvailableVars() {
+    const keys = new Set();
+    (contacts || []).forEach(c => {
+        if (c && c.vars) {
+            Object.keys(c.vars).forEach(k => {
+                if (isValidVarKey(k)) keys.add(k);
+            });
+        }
+    });
+    keys.add('phone');
+    return [...keys].sort();
+}
+
+function showAutocomplete(filter = '') {
+    const all = getAvailableVars();
+    const vars = all.filter(v => v.toLowerCase().includes(filter.toLowerCase()));
+    console.log('[autocomplete] available:', all, 'filter:', filter, 'matched:', vars, 'contacts sample:', contacts[0]);
+    if (!vars.length) { hideAutocomplete(); return; }
+
+    acItems = vars;
+    acIndex = 0;
+    renderAutocomplete();
+    acEl.classList.remove('hidden');
+}
+
+function renderAutocomplete() {
+    acEl.innerHTML = '';
+    acItems.forEach((v, i) => {
+        const item = document.createElement('div');
+        item.className = 'ac-item' + (i === acIndex ? ' active' : '');
+        item.textContent = '{' + v + '}';
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            pickAutocomplete(i);
+        });
+        acEl.appendChild(item);
+    });
+}
+
+function hideAutocomplete() {
+    acEl.classList.add('hidden');
+    acItems = [];
+}
+
+function pickAutocomplete(idx) {
+    const v = acItems[idx];
+    if (!v) return;
+
+    const value = messageEl.value;
+    const cursor = messageEl.selectionStart;
+    // Cari posisi { terakhir sebelum cursor
+    const braceIdx = value.lastIndexOf('{', cursor - 1);
+    if (braceIdx === -1) return;
+
+    const before = value.slice(0, braceIdx);
+    const after = value.slice(cursor);
+    const replacement = '{' + v + '}';
+    messageEl.value = before + replacement + after;
+    const newPos = before.length + replacement.length;
+    messageEl.setSelectionRange(newPos, newPos);
+    messageEl.focus();
+    messageEl.dispatchEvent(new Event('input'));
+    hideAutocomplete();
+}
+
+messageEl.addEventListener('input', () => {
+    const value = messageEl.value;
+    const cursor = messageEl.selectionStart;
+    const braceIdx = value.lastIndexOf('{', cursor - 1);
+
+    if (braceIdx === -1) { hideAutocomplete(); return; }
+    // Pastikan tidak ada } setelah brace dan sebelum cursor
+    const segment = value.slice(braceIdx + 1, cursor);
+    if (/[}\s]/.test(segment)) { hideAutocomplete(); return; }
+
+    showAutocomplete(segment);
+});
+
+messageEl.addEventListener('keydown', (e) => {
+    if (acEl.classList.contains('hidden')) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        acIndex = (acIndex + 1) % acItems.length;
+        renderAutocomplete();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        acIndex = (acIndex - 1 + acItems.length) % acItems.length;
+        renderAutocomplete();
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        pickAutocomplete(acIndex);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        hideAutocomplete();
+    }
+});
+
+messageEl.addEventListener('blur', () => setTimeout(hideAutocomplete, 150));
+
+// === Preview formatting ===
+const previewEl = document.getElementById('preview');
+
+function renderPreview() {
+    const text = messageEl.value;
+    if (!text.trim()) {
+        previewEl.classList.remove('show');
+        return;
+    }
+
+    // Sample dari kontak pertama untuk preview
+    const sample = contacts[0];
+    let rendered = text;
+    if (sample) {
+        rendered = rendered.replace(/\{(\w+)\}/g, (m, key) => {
+            if (key === 'phone') return sample.phone;
+            return sample.vars?.[key] ?? m;
+        });
+    }
+
+    previewEl.innerHTML = '<b style="color:#666;font-weight:normal;font-size:10px">PREVIEW:</b><br>' + waToHtml(rendered);
+    previewEl.classList.add('show');
+}
+
+function waToHtml(text) {
+    // Escape HTML dulu
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Mono triple-backtick (proses dulu sebelum single-char)
+    text = text.replace(/```([^`\n]+)```/g, '<code>$1</code>');
+    // Bold *text*
+    text = text.replace(/(^|\s)\*([^\*\n]+)\*(?=\s|$|[.,!?])/g, '$1<b>$2</b>');
+    // Italic _text_
+    text = text.replace(/(^|\s)_([^_\n]+)_(?=\s|$|[.,!?])/g, '$1<i>$2</i>');
+    // Strike ~text~
+    text = text.replace(/(^|\s)~([^~\n]+)~(?=\s|$|[.,!?])/g, '$1<s>$2</s>');
+    return text;
+}
+
+messageEl.addEventListener('input', renderPreview);
 
 function renderChips() {
     chipsEl.innerHTML = '';
@@ -67,7 +285,7 @@ function renderChips() {
 }
 
 function isValidVarKey(k) {
-    return k && !/^__empty/i.test(k) && !/^name$/i.test(k);
+    return k && !/^__empty/i.test(k);
 }
 
 function updateVarHint() {

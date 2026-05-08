@@ -21,7 +21,20 @@
     <button id="clearAllBtn" class="small secondary">Hapus Semua</button>
 
     <label>Template Pesan <span id="varHint" class="hint"></span></label>
-    <textarea id="message" placeholder="Halo {nama}, undangan Anda sudah siap"></textarea>
+    <div class="toolbar">
+        <button type="button" class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button type="button" class="fmt-btn" data-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button type="button" class="fmt-btn" data-fmt="strike" title="Strikethrough"><s>S</s></button>
+        <button type="button" class="fmt-btn" data-fmt="mono" title="Monospace"><code>M</code></button>
+        <button type="button" class="fmt-btn" data-fmt="bullet" title="Bullet list">•</button>
+        <button type="button" class="fmt-btn" data-fmt="quote" title="Quote">&gt;</button>
+        <button type="button" class="fmt-btn" id="varBtn" title="Sisip variabel">{ }</button>
+    </div>
+    <div class="textarea-wrap">
+        <textarea id="message" placeholder="Halo *{nama}*, undangan Anda sudah siap"></textarea>
+        <div id="autocomplete" class="autocomplete hidden"></div>
+    </div>
+    <div id="preview" class="preview hint"></div>
 
     <div class="row">
         <div>
