@@ -15,6 +15,7 @@ const varHintEl = document.getElementById('varHint');
 
 // contacts: array of { phone, vars: { kolom1: val, ... } }
 let contacts = [];
+let media = null; // { name, type, dataUrl }
 
 const PHONE_KEYS = ['phone', 'nomor', 'no_hp', 'nohp', 'no hp', 'whatsapp', 'wa', 'hp', 'telp', 'telepon', 'no'];
 
@@ -354,6 +355,42 @@ clearAllBtn.addEventListener('click', () => {
     updateVarHint();
 });
 
+// === Media attachment ===
+const mediaInputEl = document.getElementById('mediaInput');
+const mediaInfoEl = document.getElementById('mediaInfo');
+
+mediaInputEl.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+        media = null;
+        mediaInfoEl.textContent = '';
+        return;
+    }
+
+    const MAX = 60 * 1024 * 1024; // 60MB
+    if (file.size > MAX) {
+        mediaInfoEl.textContent = `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maks 60MB.`;
+        mediaInputEl.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        media = { name: file.name, type: file.type, dataUrl: reader.result };
+        mediaInfoEl.textContent = `Lampiran: ${file.name} (${(file.size / 1024).toFixed(1)} KB) — ${detectMediaKind(file)}`;
+    };
+    reader.onerror = () => {
+        mediaInfoEl.textContent = 'Gagal baca file.';
+    };
+    reader.readAsDataURL(file);
+});
+
+function detectMediaKind(file) {
+    if (file.type.startsWith('image/')) return 'foto';
+    if (file.type.startsWith('video/')) return 'video';
+    return 'dokumen';
+}
+
 // === Excel/CSV Import ===
 fileInputEl.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -491,7 +528,8 @@ startBtn.addEventListener('click', () => {
         contacts,
         message,
         minDelay,
-        maxDelay
+        maxDelay,
+        media // { name, type, dataUrl } | null
     });
 
     statusEl.textContent = 'Memulai...';

@@ -63,7 +63,7 @@ async function ensureContentScript(tabId) {
     }
 }
 
-async function startBulk({ contacts, message, minDelay, maxDelay }) {
+async function startBulk({ contacts, message, minDelay, maxDelay, media }) {
     running = true;
     stopRequested = false;
 
@@ -116,7 +116,8 @@ async function startBulk({ contacts, message, minDelay, maxDelay }) {
             sendResult = await chrome.tabs.sendMessage(tab.id, {
                 type: 'SEND_TO_NUMBER',
                 phone: contact.phone,
-                message: finalMessage
+                message: finalMessage,
+                media // diteruskan ke content script
             });
         } catch (err) {
             sendResult = { ok: false, reason: 'no_response: ' + (err?.message || 'unknown') };
@@ -128,7 +129,9 @@ async function startBulk({ contacts, message, minDelay, maxDelay }) {
             setProgress(`(${i + 1}/${contacts.length}) Gagal kirim ke ${contact.phone} (${sendResult?.reason || 'unknown'})`);
         }
 
-        await sleep(randomDelay(minDelay * 1000, maxDelay * 1000));
+        // Kalau ada media, kasih waktu ekstra untuk upload selesai
+        const extraWait = media ? randomDelay(3000, 6000) : 0;
+        await sleep(randomDelay(minDelay * 1000, maxDelay * 1000) + extraWait);
 
         if ((i + 1) % 5 === 0 && i + 1 < contacts.length) {
             const longBreak = randomDelay(60000, 180000);

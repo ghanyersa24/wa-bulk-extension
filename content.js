@@ -4,7 +4,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return false;
     }
     if (msg.type === 'SEND_TO_NUMBER') {
-        sendToNumber(msg.phone, msg.message)
+        sendToNumber(msg.phone, msg.message, msg.media)
             .then(result => sendResponse(result))
             .catch(err => sendResponse({ ok: false, reason: err.message }));
         return true;
@@ -12,7 +12,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
 });
 
-async function sendToNumber(phone, message) {
+async function sendToNumber(phone, message, media) {
     // 1. Pastikan WA sudah load (sidebar muncul)
     if (!await waitFor(() => document.querySelector('#side, [data-testid="chat-list"]'), 15000)) {
         return { ok: false, reason: 'wa_not_ready' };
@@ -33,10 +33,61 @@ async function sendToNumber(phone, message) {
     const footer = await waitFor(() => getFooterTextbox(), 10000);
     if (!footer) return { ok: false, reason: 'footer_not_ready' };
 
+    // 6a. Jika ada media — paste file langsung ke footer (mensimulasikan Ctrl+V)
+    if (media && media.dataUrl) {
+        const file = dataUrlToFile(media.dataUrl, media.name, media.type);
+        const isImageOrVideo = (media.type || '').startsWith('image/') || (media.type || '').startsWith('video/');
+
+        footer.focus();
+        await sleep(200);
+
+        const dt = new DataTransfer();
+        dt.items.add(file);
+
+        const pasteEvent = new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            clipboardData: dt
+        });
+        try { Object.defineProperty(pasteEvent, 'clipboardData', { value: dt }); } catch (_) {}
+
+        footer.dispatchEvent(pasteEvent);
+
+        // Setelah paste, WA buka preview overlay. Tunggu caption box muncul.
+        const captionBox = await waitFor(() => getCaptionBox(), 8000);
+        if (!captionBox) return { ok: false, reason: 'caption_box_not_ready' };
+
+        // Caption hanya untuk foto/video. Dokumen tidak menerima caption di paste flow.
+        if (isImageOrVideo && message && message.trim()) {
+            await typeIntoBox(captionBox, message);
+            await sleep(300);
+        }
+
+        const sendBtnMedia = await waitFor(() => findSendButton(), 5000);
+        if (!sendBtnMedia) return { ok: false, reason: 'send_btn_after_media_not_found' };
+        sendBtnMedia.click();
+        await sleep(1500); // tunggu preview tertutup
+
+        // Untuk dokumen: kirim pesan teks sebagai chat terpisah setelah file terkirim
+        if (!isImageOrVideo && message && message.trim()) {
+            const textFooter = await waitFor(() => getFooterTextbox(), 5000);
+            if (textFooter) {
+                await typeIntoBox(textFooter, message);
+                await sleep(300);
+                const textSendBtn = findSendButton();
+                if (textSendBtn) textSendBtn.click();
+                else dispatchEnter(textFooter);
+                await sleep(500);
+            }
+        }
+
+        return { ok: true, method: 'paste' };
+    }
+
+    // 6b. Pesan teks biasa
     await typeIntoBox(footer, message);
     await sleep(300);
 
-    // 6. Klik tombol kirim
     const sendBtn = findSendButton();
     if (sendBtn) {
         sendBtn.click();
@@ -45,6 +96,38 @@ async function sendToNumber(phone, message) {
 
     dispatchEnter(footer);
     return { ok: true, method: 'enter' };
+}
+
+function dataUrlToFile(dataUrl, name, type) {
+    const [meta, b64] = dataUrl.split(',');
+    const mime = type || (meta.match(/:(.*?);/)?.[1] ?? 'application/octet-stream');
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new File([u8], name, { type: mime });
+}
+
+function getCaptionBox() {
+    // Setelah attach, muncul textbox baru "Add a caption" / "Tambahkan keterangan"
+    const boxes = document.querySelectorAll('div[contenteditable="true"][role="textbox"]');
+    for (const box of boxes) {
+        const label = (box.getAttribute('aria-label') || '') + ' ' + (box.getAttribute('data-tab') || '');
+        if (/caption|keterangan|add a/i.test(label)) return box;
+    }
+    // Fallback: textbox terakhir (overlay biasanya di atas footer asli)
+    return boxes[boxes.length - 1] || null;
+}
+
+function realClick(el) {
+    const rect = el.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const opts = { bubbles: true, cancelable: true, view: window, clientX: x, clientY: y, button: 0 };
+    el.dispatchEvent(new PointerEvent('pointerdown', { ...opts, pointerType: 'mouse', isPrimary: true }));
+    el.dispatchEvent(new MouseEvent('mousedown', opts));
+    el.dispatchEvent(new PointerEvent('pointerup', { ...opts, pointerType: 'mouse', isPrimary: true }));
+    el.dispatchEvent(new MouseEvent('mouseup', opts));
+    el.dispatchEvent(new MouseEvent('click', opts));
 }
 
 function findSidebarSearch() {
