@@ -119,6 +119,17 @@ button:disabled {
     background: #888;
 }
 
+.hint {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+}
+
+input[type="file"] {
+    padding: 4px;
+    font-size: 12px;
+}
+
 #status {
     margin-top: 12px;
     padding: 8px;

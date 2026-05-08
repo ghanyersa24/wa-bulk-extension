@@ -8,16 +8,20 @@
 <body>
     <h2>WA Bulk Sender</h2>
 
-    <label>Tambah Nomor (pisah baris / koma / spasi, lalu Enter)</label>
+    <label>Import dari Excel/CSV</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <div id="fileInfo" class="hint"></div>
+
+    <label>Tambah Manual (pisah baris / koma / spasi, lalu Enter)</label>
     <textarea id="contactInput" placeholder="628123456789&#10;628987654321"></textarea>
     <button id="addBtn" class="small">Tambah ke Daftar</button>
 
-    <label>Daftar Nomor (<span id="count">0</span>)</label>
+    <label>Daftar Kontak (<span id="count">0</span>)</label>
     <div id="chips"></div>
     <button id="clearAllBtn" class="small secondary">Hapus Semua</button>
 
-    <label>Template Pesan</label>
-    <textarea id="message" placeholder="Halo, undangan Anda sudah siap"></textarea>
+    <label>Template Pesan <span id="varHint" class="hint"></span></label>
+    <textarea id="message" placeholder="Halo {nama}, undangan Anda sudah siap"></textarea>
 
     <div class="row">
         <div>
@@ -37,6 +41,7 @@
 
     <div id="status"></div>
 
+    <script src="xlsx.full.min.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

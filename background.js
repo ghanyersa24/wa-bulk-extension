@@ -160,9 +160,20 @@ function setProgress(text) {
 }
 
 function parseMessage(template, contact) {
-    return template
-        .replaceAll('{name}', contact.name || '')
-        .replaceAll('{phone}', contact.phone || '');
+    let result = template.replaceAll('{phone}', contact.phone || '');
+    if (contact.vars) {
+        for (const [key, val] of Object.entries(contact.vars)) {
+            const re = new RegExp(`\\{${escapeRegex(key)}\\}`, 'gi');
+            result = result.replace(re, val ?? '');
+        }
+    }
+    // alias umum
+    result = result.replaceAll('{name}', (contact.vars?.nama || contact.vars?.name || ''));
+    return result;
+}
+
+function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function randomTemplate(templates) {
