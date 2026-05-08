@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>WA Bulk Sender</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>WA Bulk Sender</h2>
+
+    <label>Tambah Nomor (pisah baris / koma / spasi, lalu Enter)</label>
+    <textarea id="contactInput" placeholder="628123456789&#10;628987654321"></textarea>
+    <button id="addBtn" class="small">Tambah ke Daftar</button>
+
+    <label>Daftar Nomor (<span id="count">0</span>)</label>
+    <div id="chips"></div>
+    <button id="clearAllBtn" class="small secondary">Hapus Semua</button>
+
+    <label>Template Pesan</label>
+    <textarea id="message" placeholder="Halo, undangan Anda sudah siap"></textarea>
+
+    <div class="row">
+        <div>
+            <label>Delay Min (detik)</label>
+            <input type="number" id="minDelay" value="10" min="3">
+        </div>
+        <div>
+            <label>Delay Max (detik)</label>
+            <input type="number" id="maxDelay" value="25" min="3">
+        </div>
+    </div>
+
+    <div class="btn-row">
+        <button id="startBtn">Mulai Kirim</button>
+        <button id="stopBtn" class="secondary">Stop</button>
+    </div>
+
+    <div id="status"></div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "WA Bulk Sender",
+  "version": "1.1",
+  "description": "Kirim pesan WhatsApp massal dengan jeda acak agar lebih aman.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
