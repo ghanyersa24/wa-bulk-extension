@@ -92,12 +92,38 @@ clearAllBtn.addEventListener('click', () => {
     renderChips();
 });
 
+let waTabAvailable = false;
+
 function refreshStatus() {
+    if (!waTabAvailable) return;
     chrome.storage.local.get(['progress'], (data) => {
         if (data.progress) statusEl.textContent = data.progress;
     });
 }
 setInterval(refreshStatus, 800);
+
+function checkWaTab() {
+    chrome.runtime.sendMessage({ type: 'CHECK_WA_TAB' }, (res) => {
+        const ok = !!res?.ok;
+        const changed = ok !== waTabAvailable;
+        waTabAvailable = ok;
+
+        if (ok) {
+            startBtn.disabled = false;
+            startBtn.title = '';
+            if (changed) statusEl.textContent = 'Tab WhatsApp Web terdeteksi.';
+        } else {
+            startBtn.disabled = true;
+            startBtn.title = 'Buka https://web.whatsapp.com/ dan login dulu';
+            statusEl.textContent = 'Tab WhatsApp Web tidak terbuka. Buka https://web.whatsapp.com/ dan login dulu.';
+        }
+    });
+}
+checkWaTab();
+setInterval(checkWaTab, 2000);
+
+// Bersihkan progress lama saat popup dibuka
+chrome.storage.local.remove('progress');
 
 startBtn.addEventListener('click', () => {
     const message = messageEl.value.trim();

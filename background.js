@@ -21,7 +21,42 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: true });
         return false;
     }
+
+    if (msg.type === 'CHECK_WA_TAB') {
+        findWhatsAppTab().then(tab => sendResponse({ ok: !!tab, tabId: tab?.id || null }));
+        return true;
+    }
 });
+
+async function findWhatsAppTab() {
+    const tabs = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' });
+    return tabs[0] || null;
+}
+
+async function tabExists(tabId) {
+    try { await chrome.tabs.get(tabId); return true; } catch { return false; }
+}
+
+async function ensureContentScript(tabId) {
+    // Ping dulu — kalau content script sudah ada, tidak perlu inject ulang
+    try {
+        const res = await chrome.tabs.sendMessage(tabId, { type: 'PING' });
+        if (res?.pong) return true;
+    } catch (_) {}
+
+    // Inject content.js ke tab (untuk tab WA yang dibuka sebelum extension di-reload)
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['content.js']
+        });
+        await sleep(300);
+        return true;
+    } catch (err) {
+        console.warn('[WA Bulk] inject content gagal:', err);
+        return false;
+    }
+}
 
 async function startBulk({ contacts, message, minDelay, maxDelay }) {
     running = true;
@@ -34,15 +69,20 @@ async function startBulk({ contacts, message, minDelay, maxDelay }) {
         message + ' 😊'
     ];
 
-    // Reuse one tab for all sends
-    const tab = await chrome.tabs.create({
-        url: 'https://web.whatsapp.com/',
-        active: true
-    });
+    const tab = await findWhatsAppTab();
+    if (!tab) {
+        setProgress('Tab WhatsApp Web tidak ditemukan. Buka https://web.whatsapp.com/ dan login dulu.');
+        running = false;
+        return;
+    }
 
-    // Tunggu WhatsApp Web siap (user mungkin perlu scan QR)
-    setProgress('Membuka WhatsApp Web... pastikan sudah login (scan QR jika perlu).');
-    await waitForWhatsAppReady(tab.id);
+    setProgress('Memeriksa status login WhatsApp Web...');
+    const loggedIn = await waitForWhatsAppReady(tab.id, 10000);
+    if (!loggedIn) {
+        setProgress('Belum login di WhatsApp Web. Silakan scan QR di tab WA, lalu coba lagi.');
+        running = false;
+        return;
+    }
 
     for (let i = 0; i < contacts.length; i++) {
         if (stopRequested) {
@@ -51,47 +91,40 @@ async function startBulk({ contacts, message, minDelay, maxDelay }) {
         }
 
         const contact = contacts[i];
-        const template = randomTemplate(templates);
-        const finalMessage = parseMessage(template, contact);
-        const encoded = encodeURIComponent(finalMessage);
-        const url = `https://web.whatsapp.com/send?phone=${contact.phone}&text=${encoded}`;
+        const finalMessage = parseMessage(randomTemplate(templates), contact);
 
-        setProgress(`(${i + 1}/${contacts.length}) Membuka chat ${contact.name || contact.phone}...`);
+        setProgress(`(${i + 1}/${contacts.length}) Memproses ${contact.phone}...`);
 
-        await chrome.tabs.update(tab.id, { url });
-
-        // Tunggu halaman chat siap (input + textbox terisi prefilled text)
-        const ready = await waitForChatReady(tab.id);
-
-        if (!ready) {
-            setProgress(`(${i + 1}/${contacts.length}) Gagal: nomor ${contact.phone} mungkin tidak valid. Skip.`);
-            await sleep(randomDelay(3000, 6000));
-            continue;
+        if (!await tabExists(tab.id)) {
+            setProgress('Tab WhatsApp Web ditutup. Proses dihentikan.');
+            break;
         }
 
-        // Jeda acak sebelum klik kirim (mensimulasikan manusia)
+        // Jeda acak sebelum mulai (mensimulasikan manusia)
         await sleep(randomDelay(minDelay * 1000, maxDelay * 1000));
-
         if (stopRequested) break;
 
-        // Trigger send via content script
+        await ensureContentScript(tab.id);
+
         let sendResult;
         try {
-            sendResult = await chrome.tabs.sendMessage(tab.id, { type: 'SEND_NOW' });
+            sendResult = await chrome.tabs.sendMessage(tab.id, {
+                type: 'SEND_TO_NUMBER',
+                phone: contact.phone,
+                message: finalMessage
+            });
         } catch (err) {
-            sendResult = { ok: false, reason: 'no_response' };
+            sendResult = { ok: false, reason: 'no_response: ' + (err?.message || 'unknown') };
         }
 
         if (sendResult && sendResult.ok) {
-            setProgress(`(${i + 1}/${contacts.length}) Terkirim ke ${contact.name || contact.phone}`);
+            setProgress(`(${i + 1}/${contacts.length}) Terkirim ke ${contact.phone}`);
         } else {
-            setProgress(`(${i + 1}/${contacts.length}) Gagal kirim ke ${contact.name || contact.phone} (${sendResult?.reason || 'unknown'})`);
+            setProgress(`(${i + 1}/${contacts.length}) Gagal kirim ke ${contact.phone} (${sendResult?.reason || 'unknown'})`);
         }
 
-        // Jeda acak setelah kirim
         await sleep(randomDelay(minDelay * 1000, maxDelay * 1000));
 
-        // Istirahat panjang setiap 5 pesan untuk hindari banned
         if ((i + 1) % 5 === 0 && i + 1 < contacts.length) {
             const longBreak = randomDelay(60000, 180000);
             setProgress(`Istirahat ${Math.round(longBreak / 1000)} detik (anti-banned)...`);
@@ -100,10 +133,7 @@ async function startBulk({ contacts, message, minDelay, maxDelay }) {
         }
     }
 
-    if (!stopRequested) {
-        setProgress('Selesai mengirim semua pesan.');
-    }
-
+    if (!stopRequested) setProgress('Selesai mengirim semua pesan.');
     running = false;
     stopRequested = false;
 }
@@ -115,49 +145,11 @@ async function waitForWhatsAppReady(tabId, maxWaitMs = 120000) {
         try {
             const [res] = await chrome.scripting.executeScript({
                 target: { tabId },
-                func: () => {
-                    // Sidebar chat list muncul = sudah login
-                    return !!document.querySelector('#side') ||
-                           !!document.querySelector('[data-testid="chat-list"]');
-                }
+                func: () => !!document.querySelector('#side') || !!document.querySelector('[data-testid="chat-list"]')
             });
             if (res?.result) return true;
-        } catch (_) {
-            // tab mungkin masih loading
-        }
-        await sleep(1500);
-    }
-    return false;
-}
-
-async function waitForChatReady(tabId, maxWaitMs = 30000) {
-    const start = Date.now();
-    while (Date.now() - start < maxWaitMs) {
-        if (stopRequested) return false;
-        try {
-            const [res] = await chrome.scripting.executeScript({
-                target: { tabId },
-                func: () => {
-                    // Cek invalid number popup
-                    const invalid = document.querySelector('div[data-testid="popup-contents"]') ||
-                                    Array.from(document.querySelectorAll('div'))
-                                        .find(d => /Phone number shared via url is invalid|nomor telepon yang dibagikan/i.test(d.textContent || ''));
-                    if (invalid) return 'invalid';
-
-                    // Cari textbox kirim pesan (footer)
-                    const boxes = document.querySelectorAll('div[contenteditable="true"][role="textbox"]');
-                    // footer biasanya box ke-2 (box pertama = search)
-                    const footer = boxes[boxes.length - 1];
-                    if (footer && footer.textContent && footer.textContent.length > 0) {
-                        return 'ready';
-                    }
-                    return 'pending';
-                }
-            });
-            if (res?.result === 'ready') return true;
-            if (res?.result === 'invalid') return false;
         } catch (_) {}
-        await sleep(1000);
+        await sleep(1500);
     }
     return false;
 }
