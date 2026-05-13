@@ -30,6 +30,26 @@ chrome.storage.local.get(['contacts', 'message', 'minDelay', 'maxDelay'], (data)
     if (typeof renderPreview === 'function') renderPreview();
 });
 
+// Expose hooks for i18n.applyI18n() so it can re-render localized strings.
+// Defined eagerly so they exist before initI18n() runs.
+window.updateBadgeText = function () {
+    const badgeText = document.getElementById('badgeText');
+    if (!badgeText) return;
+    const badge = document.getElementById('waBadge');
+    if (badge && badge.classList.contains('connected')) {
+        badgeText.textContent = t('badge_connected');
+    } else if (badge && badge.classList.contains('disconnected')) {
+        badgeText.textContent = t('badge_disconnected');
+    } else {
+        badgeText.textContent = t('badge_detecting');
+    }
+};
+window.renderPreview = () => renderPreview();
+window.updateVarHint = () => updateVarHint();
+
+// Init i18n — pasang listener tombol toggle & terapkan bahasa tersimpan.
+if (typeof initI18n === 'function') initI18n();
+
 function persist() {
     chrome.storage.local.set({
         contacts,
@@ -238,7 +258,7 @@ function renderPreview() {
         });
     }
 
-    previewEl.innerHTML = '<b style="color:#666;font-weight:normal;font-size:10px">PREVIEW:</b><br>' + waToHtml(rendered);
+    previewEl.innerHTML = `<b style="color:#666;font-weight:normal;font-size:10px">${t('preview_label')}</b><br>` + waToHtml(rendered);
     previewEl.classList.add('show');
 }
 
@@ -271,7 +291,7 @@ function renderChips() {
         const x = document.createElement('span');
         x.className = 'x';
         x.textContent = '×';
-        x.title = 'Hapus';
+        x.title = t('chip_remove_title');
         x.addEventListener('click', () => {
             contacts.splice(idx, 1);
             persist();
@@ -297,7 +317,7 @@ function updateVarHint() {
         });
     });
     if (keys.size) {
-        varHintEl.textContent = `Variabel: ${[...keys].map(k => `{${k}}`).join(', ')}`;
+        varHintEl.textContent = `${t('var_hint_prefix')} ${[...keys].map(k => `{${k}}`).join(', ')}`;
     } else {
         varHintEl.textContent = '';
     }
@@ -335,7 +355,7 @@ function addPhonesFromInput() {
     persist();
     renderChips();
     updateVarHint();
-    statusEl.textContent = `Ditambahkan: ${added}, dilewati (duplikat/invalid): ${skipped}`;
+    statusEl.textContent = t('added_skipped', added, skipped);
 }
 
 addBtn.addEventListener('click', addPhonesFromInput);
@@ -348,7 +368,7 @@ contactInputEl.addEventListener('keydown', (e) => {
 });
 
 clearAllBtn.addEventListener('click', () => {
-    if (contacts.length && !confirm('Hapus semua kontak?')) return;
+    if (contacts.length && !confirm(t('confirm_clear'))) return;
     contacts = [];
     persist();
     renderChips();
@@ -369,7 +389,7 @@ mediaInputEl.addEventListener('change', async (e) => {
 
     const MAX = 60 * 1024 * 1024; // 60MB
     if (file.size > MAX) {
-        mediaInfoEl.textContent = `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maks 60MB.`;
+        mediaInfoEl.textContent = t('media_too_big', (file.size / 1024 / 1024).toFixed(1));
         mediaInputEl.value = '';
         return;
     }
@@ -377,18 +397,18 @@ mediaInputEl.addEventListener('change', async (e) => {
     const reader = new FileReader();
     reader.onload = () => {
         media = { name: file.name, type: file.type, dataUrl: reader.result };
-        mediaInfoEl.textContent = `Lampiran: ${file.name} (${(file.size / 1024).toFixed(1)} KB) — ${detectMediaKind(file)}`;
+        mediaInfoEl.textContent = t('media_info', file.name, (file.size / 1024).toFixed(1), detectMediaKind(file));
     };
     reader.onerror = () => {
-        mediaInfoEl.textContent = 'Gagal baca file.';
+        mediaInfoEl.textContent = t('media_read_fail');
     };
     reader.readAsDataURL(file);
 });
 
 function detectMediaKind(file) {
-    if (file.type.startsWith('image/')) return 'foto';
-    if (file.type.startsWith('video/')) return 'video';
-    return 'dokumen';
+    if (file.type.startsWith('image/')) return t('media_photo');
+    if (file.type.startsWith('video/')) return t('media_video');
+    return t('media_doc');
 }
 
 // === Excel/CSV Import ===
@@ -403,7 +423,7 @@ fileInputEl.addEventListener('change', async (e) => {
         const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
 
         if (!rows.length) {
-            fileInfoEl.textContent = 'File kosong atau tidak terbaca.';
+            fileInfoEl.textContent = t('file_empty');
             return;
         }
 
@@ -413,13 +433,13 @@ fileInputEl.addEventListener('change', async (e) => {
         const headers = [...allHeaders].filter(h => h && !/^__empty/i.test(h));
 
         if (!headers.length) {
-            fileInfoEl.textContent = 'File tidak punya header. Pastikan baris pertama berisi nama kolom (mis. nama, nomor, acara).';
+            fileInfoEl.textContent = t('file_no_header');
             return;
         }
 
         const phoneKey = detectPhoneKey(headers);
         if (!phoneKey) {
-            fileInfoEl.textContent = `Tidak menemukan kolom nomor. Header: ${headers.join(', ')}. Tambahkan kolom dengan nama: phone/nomor/wa/hp.`;
+            fileInfoEl.textContent = t('file_no_phone', headers.join(', '));
             return;
         }
 
@@ -449,10 +469,11 @@ fileInputEl.addEventListener('change', async (e) => {
         persist();
         renderChips();
         updateVarHint();
-        fileInfoEl.textContent = `Imported dari "${file.name}": +${added} kontak, skip ${skipped}. Kolom nomor: "${phoneKey}". Variabel: ${headers.filter(h => h !== phoneKey).map(h => `{${normalizeKey(h)}}`).join(', ') || '(tidak ada)'}`;
+        const varsList = headers.filter(h => h !== phoneKey).map(h => `{${normalizeKey(h)}}`).join(', ');
+        fileInfoEl.textContent = t('file_imported', file.name, added, skipped, phoneKey, varsList);
         fileInputEl.value = '';
     } catch (err) {
-        fileInfoEl.textContent = 'Error baca file: ' + err.message;
+        fileInfoEl.textContent = t('file_read_error', err.message);
     }
 });
 
@@ -476,7 +497,11 @@ let waTabAvailable = false;
 function refreshStatus() {
     if (!waTabAvailable) return;
     chrome.storage.local.get(['progress'], (data) => {
-        if (data.progress) statusEl.textContent = data.progress;
+        const p = data.progress;
+        if (!p) return;
+        // Backward-compat: kalau masih string lama, tampilkan apa adanya
+        if (typeof p === 'string') { statusEl.textContent = p; return; }
+        if (p.key) statusEl.textContent = t(p.key, ...(p.args || []));
     });
 }
 setInterval(refreshStatus, 800);
@@ -492,15 +517,16 @@ function checkWaTab() {
             badge.classList.toggle('connected', ok);
             badge.classList.toggle('disconnected', !ok);
         }
+        window.updateBadgeText();
 
         if (ok) {
             startBtn.disabled = false;
             startBtn.title = '';
-            if (changed) statusEl.textContent = '✅ Tab WhatsApp Web terdeteksi. Siap kirim!';
+            if (changed) statusEl.textContent = t('status_wa_ready');
         } else {
             startBtn.disabled = true;
-            startBtn.title = 'Buka https://web.whatsapp.com/ dan login dulu';
-            statusEl.textContent = '⚠️ Buka WhatsApp Web dan login dulu, ya!';
+            startBtn.title = t('title_open_wa');
+            statusEl.textContent = t('status_wa_missing');
         }
     });
 }
@@ -525,9 +551,9 @@ startBtn.addEventListener('click', () => {
     const minDelay = parseInt(minDelayEl.value) || 10;
     const maxDelay = parseInt(maxDelayEl.value) || 25;
 
-    if (!message) { alert('Pesan tidak boleh kosong'); return; }
-    if (minDelay > maxDelay) { alert('Delay min tidak boleh lebih besar dari max'); return; }
-    if (!contacts.length) { alert('Tambahkan minimal 1 kontak'); return; }
+    if (!message) { alert(t('alert_no_message')); return; }
+    if (minDelay > maxDelay) { alert(t('alert_invalid_delay')); return; }
+    if (!contacts.length) { alert(t('alert_no_contacts')); return; }
 
     chrome.runtime.sendMessage({
         type: 'START_BULK',
@@ -538,12 +564,12 @@ startBtn.addEventListener('click', () => {
         media // { name, type, dataUrl } | null
     });
 
-    statusEl.textContent = '🚀 Memulai pengiriman...';
+    statusEl.textContent = t('status_starting');
     startBtn.style.display = 'none';
     stopBtn.style.display = '';
 });
 
 stopBtn.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'STOP_BULK' });
-    statusEl.textContent = '⏹ Menghentikan pengiriman...';
+    statusEl.textContent = t('status_stopping');
 });

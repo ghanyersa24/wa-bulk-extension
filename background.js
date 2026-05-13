@@ -9,7 +9,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
         startBulk(msg).catch(err => {
             console.error(err);
-            setProgress('Error: ' + err.message);
+            setProgress('prog_error', [err.message]);
             running = false;
         });
         sendResponse({ ok: true });
@@ -76,32 +76,32 @@ async function startBulk({ contacts, message, minDelay, maxDelay, media }) {
 
     const tab = await findWhatsAppTab();
     if (!tab) {
-        setProgress('Tab WhatsApp Web tidak ditemukan. Buka https://web.whatsapp.com/ dan login dulu.');
+        setProgress('prog_no_tab');
         running = false;
         return;
     }
 
-    setProgress('Memeriksa status login WhatsApp Web...');
+    setProgress('prog_checking_login');
     const loggedIn = await waitForWhatsAppReady(tab.id, 10000);
     if (!loggedIn) {
-        setProgress('Belum login di WhatsApp Web. Silakan scan QR di tab WA, lalu coba lagi.');
+        setProgress('prog_not_logged_in');
         running = false;
         return;
     }
 
     for (let i = 0; i < contacts.length; i++) {
         if (stopRequested) {
-            setProgress(`Dihentikan pada ${i}/${contacts.length}`);
+            setProgress('prog_stopped', [i, contacts.length]);
             break;
         }
 
         const contact = contacts[i];
         const finalMessage = parseMessage(randomTemplate(templates), contact);
 
-        setProgress(`(${i + 1}/${contacts.length}) Memproses ${contact.phone}...`);
+        setProgress('prog_processing', [i + 1, contacts.length, contact.phone]);
 
         if (!await tabExists(tab.id)) {
-            setProgress('Tab WhatsApp Web ditutup. Proses dihentikan.');
+            setProgress('prog_tab_closed');
             break;
         }
 
@@ -124,9 +124,9 @@ async function startBulk({ contacts, message, minDelay, maxDelay, media }) {
         }
 
         if (sendResult && sendResult.ok) {
-            setProgress(`(${i + 1}/${contacts.length}) Terkirim ke ${contact.phone}`);
+            setProgress('prog_sent', [i + 1, contacts.length, contact.phone]);
         } else {
-            setProgress(`(${i + 1}/${contacts.length}) Gagal kirim ke ${contact.phone} (${sendResult?.reason || 'unknown'})`);
+            setProgress('prog_failed', [i + 1, contacts.length, contact.phone, sendResult?.reason || 'unknown']);
         }
 
         // Kalau ada media, kasih waktu ekstra untuk upload selesai
@@ -135,13 +135,13 @@ async function startBulk({ contacts, message, minDelay, maxDelay, media }) {
 
         if ((i + 1) % 5 === 0 && i + 1 < contacts.length) {
             const longBreak = randomDelay(60000, 180000);
-            setProgress(`Istirahat ${Math.round(longBreak / 1000)} detik (anti-banned)...`);
+            setProgress('prog_break', [Math.round(longBreak / 1000)]);
             const stepped = await sleepInterruptible(longBreak);
             if (!stepped) break;
         }
     }
 
-    if (!stopRequested) setProgress('Selesai mengirim semua pesan.');
+    if (!stopRequested) setProgress('prog_done');
     running = false;
     stopRequested = false;
 }
@@ -162,9 +162,9 @@ async function waitForWhatsAppReady(tabId, maxWaitMs = 120000) {
     return false;
 }
 
-function setProgress(text) {
-    console.log('[WA Bulk]', text);
-    chrome.storage.local.set({ progress: text });
+function setProgress(key, args) {
+    console.log('[WA Bulk]', key, args || '');
+    chrome.storage.local.set({ progress: { key, args: args || [] } });
 }
 
 function parseMessage(template, contact) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>WA Bulk Sender</title>
@@ -12,13 +12,16 @@
         <div class="header-left">
             <img src="icons/icon48.png" alt="logo" class="header-logo">
             <div>
-                <div class="header-title">WA Bulk Sender</div>
-                <div class="header-sub">Kirim cerdas, tetap aman 🛡️</div>
+                <div class="header-title" data-i18n="header_title">WA Bulk Sender</div>
+                <div class="header-sub" data-i18n="header_sub">Send smart, stay safe 🛡️</div>
             </div>
         </div>
-        <div class="header-badge" id="waBadge">
-            <span class="badge-dot"></span>
-            <span class="badge-text">Mendeteksi...</span>
+        <div class="header-right">
+            <button id="langToggle" class="lang-toggle" type="button" title="Change language / Ganti bahasa">ID</button>
+            <div class="header-badge" id="waBadge">
+                <span class="badge-dot"></span>
+                <span class="badge-text" id="badgeText">Detecting...</span>
+            </div>
         </div>
     </div>
 
@@ -26,11 +29,11 @@
     <div class="section">
         <div class="section-label">
             <span class="section-icon">📂</span>
-            Import Excel / CSV
+            <span data-i18n="sec_import">Import Excel / CSV</span>
         </div>
         <label class="file-drop" id="fileDropZone">
             <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-            <span class="file-drop-text">Seret file ke sini atau <u>klik untuk pilih</u></span>
+            <span class="file-drop-text" data-i18n-html="file_drop_import">Drag file here or <u>click to choose</u></span>
         </label>
         <div id="fileInfo" class="hint-text"></div>
     </div>
@@ -39,10 +42,10 @@
     <div class="section">
         <div class="section-label">
             <span class="section-icon">✏️</span>
-            Tambah Manual
+            <span data-i18n="sec_manual">Add Manually</span>
         </div>
-        <textarea id="contactInput" placeholder="628123456789&#10;628987654321&#10;Pisah dengan baris, koma, atau spasi"></textarea>
-        <button id="addBtn" class="btn-small">＋ Tambah ke Daftar</button>
+        <textarea id="contactInput" data-i18n-placeholder="contact_placeholder" placeholder="628123456789&#10;628987654321&#10;Separate by line, comma, or space"></textarea>
+        <button id="addBtn" class="btn-small" data-i18n="add_to_list">＋ Add to List</button>
     </div>
 
     <!-- Section: Daftar Kontak -->
@@ -50,23 +53,27 @@
         <div class="section-label-row">
             <div class="section-label">
                 <span class="section-icon">👥</span>
-                Daftar Kontak
+                <span data-i18n="sec_contacts">Contact List</span>
             </div>
-            <div class="contact-count-badge"><span id="count">0</span> kontak</div>
+            <div class="contact-count-badge">
+                <span id="count">0</span>
+                <span data-i18n="contact_count_suffix">contacts</span>
+            </div>
         </div>
         <div id="chips"></div>
-        <button id="clearAllBtn" class="btn-ghost">🗑️ Hapus Semua</button>
+        <button id="clearAllBtn" class="btn-ghost" data-i18n="clear_all">🗑️ Clear All</button>
     </div>
 
     <!-- Section: Lampiran -->
     <div class="section">
         <div class="section-label">
             <span class="section-icon">📎</span>
-            Lampiran <span class="optional-tag">opsional</span>
+            <span data-i18n="sec_attachment">Attachment</span>
+            <span class="optional-tag" data-i18n="optional">optional</span>
         </div>
         <label class="file-drop file-drop-sm" id="mediaDropZone">
             <input type="file" id="mediaInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
-            <span class="file-drop-text">Foto, video, PDF, atau dokumen (maks 60MB)</span>
+            <span class="file-drop-text" data-i18n="file_drop_media">Photo, video, PDF, or document (max 60MB)</span>
         </label>
         <div id="mediaInfo" class="hint-text"></div>
     </div>
@@ -76,21 +83,21 @@
         <div class="section-label-row">
             <div class="section-label">
                 <span class="section-icon">💬</span>
-                Template Pesan
+                <span data-i18n="sec_template">Message Template</span>
             </div>
             <span id="varHint" class="var-hint"></span>
         </div>
         <div class="toolbar">
-            <button type="button" class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-            <button type="button" class="fmt-btn" data-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-            <button type="button" class="fmt-btn" data-fmt="strike" title="Strikethrough"><s>S</s></button>
-            <button type="button" class="fmt-btn" data-fmt="mono" title="Monospace"><code>M</code></button>
-            <button type="button" class="fmt-btn" data-fmt="bullet" title="Bullet list">•</button>
-            <button type="button" class="fmt-btn" data-fmt="quote" title="Quote">❝</button>
-            <button type="button" class="fmt-btn fmt-btn-var" id="varBtn" title="Sisip variabel">{ }</button>
+            <button type="button" class="fmt-btn" data-fmt="bold" data-i18n-title="tt_bold" title="Bold (Ctrl+B)"><b>B</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic" data-i18n-title="tt_italic" title="Italic (Ctrl+I)"><i>I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="strike" data-i18n-title="tt_strike" title="Strikethrough"><s>S</s></button>
+            <button type="button" class="fmt-btn" data-fmt="mono" data-i18n-title="tt_mono" title="Monospace"><code>M</code></button>
+            <button type="button" class="fmt-btn" data-fmt="bullet" data-i18n-title="tt_bullet" title="Bullet list">•</button>
+            <button type="button" class="fmt-btn" data-fmt="quote" data-i18n-title="tt_quote" title="Quote">❝</button>
+            <button type="button" class="fmt-btn fmt-btn-var" id="varBtn" data-i18n-title="tt_var" title="Insert variable">{ }</button>
         </div>
         <div class="textarea-wrap">
-            <textarea id="message" placeholder="Halo *{nama}*, undangan kamu sudah siap! 🎉"></textarea>
+            <textarea id="message" data-i18n-placeholder="message_placeholder" placeholder="Hi *{nama}*, your invitation is ready! 🎉"></textarea>
             <div id="autocomplete" class="autocomplete hidden"></div>
         </div>
         <div id="preview" class="preview hint"></div>
@@ -100,30 +107,30 @@
     <div class="section">
         <div class="section-label">
             <span class="section-icon">⏱️</span>
-            Jeda Pengiriman
-            <span class="hint-inline">detik</span>
+            <span data-i18n="sec_delay">Sending Delay</span>
+            <span class="hint-inline" data-i18n="delay_unit">seconds</span>
         </div>
         <div class="delay-row">
             <div class="delay-card">
-                <div class="delay-label">Min</div>
+                <div class="delay-label" data-i18n="delay_min">Min</div>
                 <input type="number" id="minDelay" value="5" min="3">
             </div>
             <div class="delay-divider">—</div>
             <div class="delay-card">
-                <div class="delay-label">Max</div>
+                <div class="delay-label" data-i18n="delay_max">Max</div>
                 <input type="number" id="maxDelay" value="25" min="3">
             </div>
         </div>
-        <div class="hint-text">Jeda acak mencegah akun terkena pembatasan 🔒</div>
+        <div class="hint-text" data-i18n="delay_hint">Random delay helps avoid account restrictions 🔒</div>
     </div>
 
     <!-- Action Buttons -->
     <div class="btn-row">
         <button id="startBtn" class="btn-primary">
-            <span>🚀</span> Mulai Kirim
+            <span>🚀</span> <span data-i18n="btn_start">Start Sending</span>
         </button>
         <button id="stopBtn" class="btn-danger" style="display:none">
-            <span>⏹</span> Stop
+            <span>⏹</span> <span data-i18n="btn_stop">Stop</span>
         </button>
     </div>
 
@@ -131,6 +138,7 @@
     <div id="status" class="status-box"></div>
 
     <script src="xlsx.full.min.js"></script>
+    <script src="i18n.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

@@ -92,11 +92,39 @@ body {
 }
 
 .header-badge.connected .badge-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
-.header-badge.connected .badge-text::after { content: "Terhubung"; }
 .header-badge.disconnected .badge-dot { background: var(--red); }
-.header-badge.disconnected .badge-text::after { content: "Buka WA Web"; }
 .header-badge .badge-text { font-size: 10px; }
-.header-badge .badge-text:not(:empty) { display: none; }
+
+/* ── Header right (toggle + badge) ── */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.lang-toggle {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 4px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 32px;
+}
+
+.lang-toggle:hover {
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.lang-toggle:active {
+    transform: scale(0.95);
+}
 
 /* ── Sections ── */
 .section {
