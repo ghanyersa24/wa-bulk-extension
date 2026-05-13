@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screenshot – WA Bulk Sender</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 1280px;
+      height: 800px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a1628;
+    }
+
+    /* ── Background ── */
+    .bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 900px 600px at 70% 50%, rgba(37,211,102,0.12), transparent),
+        radial-gradient(ellipse 600px 400px at 10% 80%, rgba(18,140,126,0.10), transparent),
+        linear-gradient(135deg, #0a1628 0%, #0d2035 60%, #0b1a10 100%);
+    }
+
+    /* Grid dots */
+    .bg::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      position: relative;
+      width: 1280px;
+      height: 800px;
+      display: flex;
+      align-items: center;
+      padding: 48px 64px;
+      gap: 64px;
+    }
+
+    /* ── Left — copy ── */
+    .copy {
+      flex: 1;
+      max-width: 520px;
+    }
+
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(37,211,102,0.15);
+      border: 1px solid rgba(37,211,102,0.35);
+      border-radius: 999px;
+      padding: 7px 16px;
+      color: #25D366;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .badge-top .dot {
+      width: 7px; height: 7px;
+      background: #25D366;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #25D366;
+    }
+
+    .headline {
+      font-size: 54px;
+      font-weight: 800;
+      line-height: 1.1;
+      color: #fff;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .headline .accent {
+      background: linear-gradient(90deg, #25D366, #128C7E);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sub {
+      color: rgba(255,255,255,0.62);
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feat {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .feat-ico {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: rgba(37,211,102,0.15);
+      border: 1px solid rgba(37,211,102,0.25);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .feat-ico svg {
+      width: 18px; height: 18px;
+      stroke: #25D366;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .feat-text {
+      color: rgba(255,255,255,0.80);
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .feat-text strong { color: #fff; }
+
+    /* ── Right — UI mockup ── */
+    .ui-wrap {
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Browser chrome */
+    .browser {
+      width: 520px;
+      background: #1c2333;
+      border-radius: 20px;
+      box-shadow:
+        0 40px 100px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .browser-bar {
+      background: #252d3e;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .browser-dots {
+      display: flex; gap: 6px;
+    }
+
+    .browser-dots span {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #febc2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+
+    .browser-url {
+      flex: 1;
+      background: #1c2333;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .browser-url::before {
+      content: "🔒";
+      font-size: 11px;
+    }
+
+    /* WhatsApp Web mock */
+    .wa-screen {
+      display: flex;
+      height: 520px;
+    }
+
+    .wa-sidebar {
+      width: 120px;
+      background: #111b21;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 8px;
+    }
+
+    .wa-search {
+      background: #202c33;
+      border-radius: 8px;
+      height: 28px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 5px;
+    }
+
+    .wa-search span {
+      font-size: 9px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .wa-chat {
+      padding: 5px 6px;
+      border-radius: 6px;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wa-chat.active { background: #2a3942; }
+
+    .wa-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      flex-shrink: 0;
+    }
+
+    .wa-chat-info { flex: 1; overflow: hidden; }
+
+    .wa-chat-name {
+      font-size: 9px;
+      color: rgba(255,255,255,0.85);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .wa-chat-preview {
+      font-size: 8px;
+      color: rgba(255,255,255,0.35);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .wa-main {
+      flex: 1;
+      background: #0b141a;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* chat bg pattern */
+    .wa-main::before {
+      content: "";
+      position: absolute;
+      width: 400px;
+      height: 520px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M10 10 Q30 5 50 10 Q55 30 50 50 Q30 55 10 50 Q5 30 10 10z' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='0.8'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .wa-topbar {
+      background: #202c33;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .wa-topbar-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+    }
+
+    .wa-contact-name {
+      font-size: 12px;
+      color: #e9edef;
+      font-weight: 600;
+    }
+
+    .wa-contact-status {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .wa-messages {
+      flex: 1;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      position: relative;
+    }
+
+    .bubble.sent {
+      background: #005c4b;
+      color: #e9edef;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+
+    .bubble.sent::after {
+      content: "";
+      position: absolute;
+      right: -6px; bottom: 0;
+      width: 0; height: 0;
+      border-top: 6px solid transparent;
+      border-left: 7px solid #005c4b;
+    }
+
+    .bubble.received {
+      background: #202c33;
+      color: #e9edef;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+
+    .bubble-time {
+      font-size: 9px;
+      color: rgba(255,255,255,0.45);
+      text-align: right;
+      margin-top: 3px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .check { color: #53bdeb; font-size: 10px; }
+
+    .bubble .green { color: #25D366; font-weight: 600; }
+
+    .wa-input-bar {
+      background: #202c33;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wa-input {
+      flex: 1;
+      background: #2a3942;
+      border-radius: 8px;
+      height: 32px;
+      padding: 0 10px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+    }
+
+    /* Extension popup overlay */
+    .popup-outer {
+      position: absolute;
+      right: -20px;
+      top: 20px;
+      filter: drop-shadow(0 20px 60px rgba(0,0,0,0.7));
+    }
+
+    .popup {
+      width: 200px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .popup-header {
+      background: linear-gradient(135deg, #075E54, #128C7E);
+      padding: 10px 12px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .popup-header img {
+      width: 22px; height: 22px;
+    }
+
+    .popup-header .title {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .popup-header .version {
+      font-size: 9px;
+      opacity: 0.7;
+      margin-left: auto;
+    }
+
+    .popup-body {
+      padding: 10px 12px;
+    }
+
+    .popup-label {
+      font-size: 9px;
+      color: #666;
+      margin-bottom: 3px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .popup-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      padding: 5px;
+      background: #f5f5f5;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      min-height: 28px;
+    }
+
+    .popup-chip {
+      background: #25D366;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 9px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .popup-chip .x {
+      background: rgba(0,0,0,0.2);
+      border-radius: 50%;
+      width: 10px; height: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 8px;
+    }
+
+    .popup-msg {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-left: 3px solid #25D366;
+      border-radius: 6px;
+      padding: 5px 8px;
+      color: #333;
+      font-size: 9px;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .popup-delay {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .popup-delay-item {
+      flex: 1;
+      background: #f0faf4;
+      border: 1px solid #c3e6cb;
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: center;
+    }
+
+    .popup-delay-item .val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #128C7E;
+    }
+
+    .popup-delay-item .lbl {
+      font-size: 8px;
+      color: #666;
+    }
+
+    .popup-start {
+      background: #25D366;
+      color: #fff;
+      border-radius: 7px;
+      padding: 7px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .popup-status {
+      margin-top: 6px;
+      background: #f3f3f3;
+      border-radius: 5px;
+      padding: 5px 7px;
+      font-size: 9px;
+      color: #128C7E;
+    }
+
+    /* sending anim badge */
+    .sending-badge {
+      position: absolute;
+      top: -10px;
+      right: 60px;
+      background: #25D366;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(37,211,102,0.5);
+      white-space: nowrap;
+    }
+
+    .sending-badge::before {
+      content: "● ";
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Bottom bar ── */
+    .bottom-bar {
+      position: absolute;
+      bottom: 40px;
+      left: 64px;
+      right: 64px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px 18px;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: #25D366;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.3;
+    }
+
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="layout">
+
+    <!-- LEFT copy -->
+    <div class="copy">
+      <div class="badge-top">
+        <span class="dot"></span>
+        Chrome Extension
+      </div>
+      <h1 class="headline">
+        Send WhatsApp<br>
+        <span class="accent">Bulk Messages</span><br>
+        Effortlessly
+      </h1>
+      <p class="sub">
+        Import contacts from Excel, personalize every message, attach media — all from WhatsApp Web.
+      </p>
+      <div class="features">
+        <div class="feat">
+          <div class="feat-ico">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+          </div>
+          <div class="feat-text"><strong>Excel / CSV Import</strong> — upload your contact list instantly</div>
+        </div>
+        <div class="feat">
+          <div class="feat-ico">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="feat-text"><strong>Personalized Messages</strong> — use <code style="background:rgba(37,211,102,0.15);color:#25D366;padding:1px 5px;border-radius:4px;font-size:12px">{name}</code> variables per contact</div>
+        </div>
+        <div class="feat">
+          <div class="feat-ico">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
+          </div>
+          <div class="feat-text"><strong>Media Attachments</strong> — images, videos, PDFs & docs</div>
+        </div>
+        <div class="feat">
+          <div class="feat-ico">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="feat-text"><strong>Smart Delay</strong> — random intervals to stay safe</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT browser mockup -->
+    <div class="ui-wrap">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="browser-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="browser-url">web.whatsapp.com</div>
+        </div>
+        <div class="wa-screen">
+          <!-- Sidebar -->
+          <div class="wa-sidebar">
+            <div class="wa-search">
+              <span>🔍 Search</span>
+            </div>
+            <div class="wa-chat active">
+              <div class="wa-avatar"></div>
+              <div class="wa-chat-info">
+                <div class="wa-chat-name">Budi S.</div>
+                <div class="wa-chat-preview">Halo Budi...</div>
+              </div>
+            </div>
+            <div class="wa-chat">
+              <div class="wa-avatar" style="background:linear-gradient(135deg,#53bdeb,#0078d4)"></div>
+              <div class="wa-chat-info">
+                <div class="wa-chat-name">Sari W.</div>
+                <div class="wa-chat-preview">Halo Sari...</div>
+              </div>
+            </div>
+            <div class="wa-chat">
+              <div class="wa-avatar" style="background:linear-gradient(135deg,#f7c948,#e08e0b)"></div>
+              <div class="wa-chat-info">
+                <div class="wa-chat-name">Dian R.</div>
+                <div class="wa-chat-preview">Halo Dian...</div>
+              </div>
+            </div>
+          </div>
+          <!-- Main chat -->
+          <div class="wa-main" style="position:relative">
+            <div class="wa-topbar">
+              <div class="wa-topbar-avatar"></div>
+              <div>
+                <div class="wa-contact-name">Budi Santoso</div>
+                <div class="wa-contact-status">online</div>
+              </div>
+            </div>
+            <div class="wa-messages">
+              <div class="bubble received">
+                Hey, is the event confirmed?
+              </div>
+              <div class="bubble sent">
+                Halo <span class="green">Budi</span>! Undangan Anda<br>untuk acara 15 Juni sudah<br>dikonfirmasi ✅
+                <div class="bubble-time">10:42 <span class="check">✓✓</span></div>
+              </div>
+              <div class="bubble sent">
+                Silakan balas pesan ini<br>untuk konfirmasi kehadiran 🙏
+                <div class="bubble-time">10:42 <span class="check">✓✓</span></div>
+              </div>
+            </div>
+            <div class="wa-input-bar">
+              <div class="wa-input">Type a message</div>
+            </div>
+            <!-- Popup overlay -->
+            <div class="popup-outer">
+              <div class="sending-badge">Sending 3 / 120…</div>
+              <div class="popup">
+                <div class="popup-header">
+                  <img src="../icons/icon128.png" alt="">
+                  <span class="title">WA Bulk Sender</span>
+                  <span class="version">v1.1</span>
+                </div>
+                <div class="popup-body">
+                  <div class="popup-label">Contacts (120)</div>
+                  <div class="popup-chips">
+                    <div class="popup-chip">6281234 <span class="x">×</span></div>
+                    <div class="popup-chip">6289876 <span class="x">×</span></div>
+                    <div class="popup-chip">6285432 <span class="x">×</span></div>
+                    <div class="popup-chip" style="background:#aaa">+117</div>
+                  </div>
+                  <div class="popup-label">Message</div>
+                  <div class="popup-msg">
+                    Halo <b style="color:#25D366">{nama}</b>! Undangan Anda untuk acara 15 Juni sudah dikonfirmasi ✅
+                  </div>
+                  <div class="popup-delay">
+                    <div class="popup-delay-item">
+                      <div class="val">10s</div>
+                      <div class="lbl">Min Delay</div>
+                    </div>
+                    <div class="popup-delay-item">
+                      <div class="val">25s</div>
+                      <div class="lbl">Max Delay</div>
+                    </div>
+                  </div>
+                  <div class="popup-start">⏹ Stop Sending</div>
+                  <div class="popup-status">✅ Sent to Budi Santoso<br>⏳ Next: Sari Wijaya (14s)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom stats -->
+  <div class="bottom-bar">
+    <div class="stat">
+      <div class="stat-val">500+</div>
+      <div class="stat-label">Contacts<br>per session</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-val">{vars}</div>
+      <div class="stat-label">Dynamic<br>variables</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-val">100%</div>
+      <div class="stat-label">Local &<br>private</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-val">0</div>
+      <div class="stat-label">Data sent<br>to servers</div>
+    </div>
+  </div>
+</body>
+</html>
