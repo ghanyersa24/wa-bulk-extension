@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "WA Bulk Sender – WhatsApp Mass Messaging",
   "version": "1.1",
-  "description": "Send personalized WhatsApp messages in bulk. Import contacts from Excel/CSV, attach media, use message templates with variables, and set random delays to stay safe.",
+  "description": "Bulk send personalized WhatsApp messages. Import from Excel/CSV, use {variables}, attach media, and set random delays to stay safe.",
   "permissions": [
     "tabs",
     "storage",
