@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "WA Bulk Sender",
+  "name": "WA Bulk Sender – WhatsApp Mass Messaging",
   "version": "1.1",
-  "description": "Kirim pesan WhatsApp massal dengan jeda acak agar lebih aman.",
+  "description": "Send personalized WhatsApp messages in bulk. Import contacts from Excel/CSV, attach media, use message templates with variables, and set random delays to stay safe.",
   "permissions": [
     "tabs",
     "storage",
@@ -14,8 +14,20 @@
   "background": {
     "service_worker": "background.js"
   },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "content_scripts": [
     {
