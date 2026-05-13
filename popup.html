@@ -6,57 +6,129 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>WA Bulk Sender</h2>
 
-    <label>Import dari Excel/CSV</label>
-    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-    <div id="fileInfo" class="hint"></div>
-
-    <label>Tambah Manual (pisah baris / koma / spasi, lalu Enter)</label>
-    <textarea id="contactInput" placeholder="628123456789&#10;628987654321"></textarea>
-    <button id="addBtn" class="small">Tambah ke Daftar</button>
-
-    <label>Daftar Kontak (<span id="count">0</span>)</label>
-    <div id="chips"></div>
-    <button id="clearAllBtn" class="small secondary">Hapus Semua</button>
-
-    <label>Lampiran (opsional)</label>
-    <input type="file" id="mediaInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
-    <div id="mediaInfo" class="hint"></div>
-
-    <label>Template Pesan <span id="varHint" class="hint"></span></label>
-    <div class="toolbar">
-        <button type="button" class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-        <button type="button" class="fmt-btn" data-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-        <button type="button" class="fmt-btn" data-fmt="strike" title="Strikethrough"><s>S</s></button>
-        <button type="button" class="fmt-btn" data-fmt="mono" title="Monospace"><code>M</code></button>
-        <button type="button" class="fmt-btn" data-fmt="bullet" title="Bullet list">•</button>
-        <button type="button" class="fmt-btn" data-fmt="quote" title="Quote">&gt;</button>
-        <button type="button" class="fmt-btn" id="varBtn" title="Sisip variabel">{ }</button>
-    </div>
-    <div class="textarea-wrap">
-        <textarea id="message" placeholder="Halo *{nama}*, undangan Anda sudah siap"></textarea>
-        <div id="autocomplete" class="autocomplete hidden"></div>
-    </div>
-    <div id="preview" class="preview hint"></div>
-
-    <div class="row">
-        <div>
-            <label>Delay Min (detik)</label>
-            <input type="number" id="minDelay" value="10" min="3">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <img src="icons/icon48.png" alt="logo" class="header-logo">
+            <div>
+                <div class="header-title">WA Bulk Sender</div>
+                <div class="header-sub">Kirim cerdas, tetap aman 🛡️</div>
+            </div>
         </div>
-        <div>
-            <label>Delay Max (detik)</label>
-            <input type="number" id="maxDelay" value="25" min="3">
+        <div class="header-badge" id="waBadge">
+            <span class="badge-dot"></span>
+            <span class="badge-text">Mendeteksi...</span>
         </div>
     </div>
 
+    <!-- Section: Import Kontak -->
+    <div class="section">
+        <div class="section-label">
+            <span class="section-icon">📂</span>
+            Import Excel / CSV
+        </div>
+        <label class="file-drop" id="fileDropZone">
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+            <span class="file-drop-text">Seret file ke sini atau <u>klik untuk pilih</u></span>
+        </label>
+        <div id="fileInfo" class="hint-text"></div>
+    </div>
+
+    <!-- Section: Manual Input -->
+    <div class="section">
+        <div class="section-label">
+            <span class="section-icon">✏️</span>
+            Tambah Manual
+        </div>
+        <textarea id="contactInput" placeholder="628123456789&#10;628987654321&#10;Pisah dengan baris, koma, atau spasi"></textarea>
+        <button id="addBtn" class="btn-small">＋ Tambah ke Daftar</button>
+    </div>
+
+    <!-- Section: Daftar Kontak -->
+    <div class="section">
+        <div class="section-label-row">
+            <div class="section-label">
+                <span class="section-icon">👥</span>
+                Daftar Kontak
+            </div>
+            <div class="contact-count-badge"><span id="count">0</span> kontak</div>
+        </div>
+        <div id="chips"></div>
+        <button id="clearAllBtn" class="btn-ghost">🗑️ Hapus Semua</button>
+    </div>
+
+    <!-- Section: Lampiran -->
+    <div class="section">
+        <div class="section-label">
+            <span class="section-icon">📎</span>
+            Lampiran <span class="optional-tag">opsional</span>
+        </div>
+        <label class="file-drop file-drop-sm" id="mediaDropZone">
+            <input type="file" id="mediaInput" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
+            <span class="file-drop-text">Foto, video, PDF, atau dokumen (maks 60MB)</span>
+        </label>
+        <div id="mediaInfo" class="hint-text"></div>
+    </div>
+
+    <!-- Section: Template Pesan -->
+    <div class="section">
+        <div class="section-label-row">
+            <div class="section-label">
+                <span class="section-icon">💬</span>
+                Template Pesan
+            </div>
+            <span id="varHint" class="var-hint"></span>
+        </div>
+        <div class="toolbar">
+            <button type="button" class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+            <button type="button" class="fmt-btn" data-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+            <button type="button" class="fmt-btn" data-fmt="strike" title="Strikethrough"><s>S</s></button>
+            <button type="button" class="fmt-btn" data-fmt="mono" title="Monospace"><code>M</code></button>
+            <button type="button" class="fmt-btn" data-fmt="bullet" title="Bullet list">•</button>
+            <button type="button" class="fmt-btn" data-fmt="quote" title="Quote">❝</button>
+            <button type="button" class="fmt-btn fmt-btn-var" id="varBtn" title="Sisip variabel">{ }</button>
+        </div>
+        <div class="textarea-wrap">
+            <textarea id="message" placeholder="Halo *{nama}*, undangan kamu sudah siap! 🎉"></textarea>
+            <div id="autocomplete" class="autocomplete hidden"></div>
+        </div>
+        <div id="preview" class="preview hint"></div>
+    </div>
+
+    <!-- Section: Delay -->
+    <div class="section">
+        <div class="section-label">
+            <span class="section-icon">⏱️</span>
+            Jeda Pengiriman
+            <span class="hint-inline">detik</span>
+        </div>
+        <div class="delay-row">
+            <div class="delay-card">
+                <div class="delay-label">Min</div>
+                <input type="number" id="minDelay" value="5" min="3">
+            </div>
+            <div class="delay-divider">—</div>
+            <div class="delay-card">
+                <div class="delay-label">Max</div>
+                <input type="number" id="maxDelay" value="25" min="3">
+            </div>
+        </div>
+        <div class="hint-text">Jeda acak mencegah akun terkena pembatasan 🔒</div>
+    </div>
+
+    <!-- Action Buttons -->
     <div class="btn-row">
-        <button id="startBtn">Mulai Kirim</button>
-        <button id="stopBtn" class="secondary">Stop</button>
+        <button id="startBtn" class="btn-primary">
+            <span>🚀</span> Mulai Kirim
+        </button>
+        <button id="stopBtn" class="btn-danger" style="display:none">
+            <span>⏹</span> Stop
+        </button>
     </div>
 
-    <div id="status"></div>
+    <!-- Status -->
+    <div id="status" class="status-box"></div>
 
     <script src="xlsx.full.min.js"></script>
     <script src="popup.js"></script>

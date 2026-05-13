@@ -487,14 +487,20 @@ function checkWaTab() {
         const changed = ok !== waTabAvailable;
         waTabAvailable = ok;
 
+        const badge = document.getElementById('waBadge');
+        if (badge) {
+            badge.classList.toggle('connected', ok);
+            badge.classList.toggle('disconnected', !ok);
+        }
+
         if (ok) {
             startBtn.disabled = false;
             startBtn.title = '';
-            if (changed) statusEl.textContent = 'Tab WhatsApp Web terdeteksi.';
+            if (changed) statusEl.textContent = '✅ Tab WhatsApp Web terdeteksi. Siap kirim!';
         } else {
             startBtn.disabled = true;
             startBtn.title = 'Buka https://web.whatsapp.com/ dan login dulu';
-            statusEl.textContent = 'Tab WhatsApp Web tidak terbuka. Buka https://web.whatsapp.com/ dan login dulu.';
+            statusEl.textContent = '⚠️ Buka WhatsApp Web dan login dulu, ya!';
         }
     });
 }
@@ -532,12 +538,12 @@ startBtn.addEventListener('click', () => {
         media // { name, type, dataUrl } | null
     });
 
-    statusEl.textContent = 'Memulai...';
+    statusEl.textContent = '🚀 Memulai pengiriman...';
     startBtn.style.display = 'none';
     stopBtn.style.display = '';
 });
 
 stopBtn.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'STOP_BULK' });
-    statusEl.textContent = 'Permintaan stop dikirim...';
+    statusEl.textContent = '⏹ Menghentikan pengiriman...';
 });
