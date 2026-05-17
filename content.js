@@ -216,9 +216,59 @@ async function typeIntoBox(box, text) {
     document.execCommand('delete', false, null);
     await sleep(50);
 
-    // Insert sekali pakai execCommand — ini sudah trigger input event secara otomatis
-    document.execCommand('insertText', false, text);
+    // Normalisasi line ending (CRLF / CR → LF), lalu pecah per baris.
+    // execCommand('insertText') tidak memproses \n di dalam contenteditable,
+    // jadi kita insert baris demi baris dan sisipkan line break manual via
+    // dispatch InputEvent('insertLineBreak') yang dipahami oleh editor WA.
+    const normalized = String(text).replace(/\r\n?/g, '\n');
+    const lines = normalized.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].length) {
+            document.execCommand('insertText', false, lines[i]);
+        }
+        if (i < lines.length - 1) {
+            insertLineBreak(box);
+        }
+    }
     await sleep(400);
+}
+
+function insertLineBreak(box) {
+    // Coba beforeinput dulu — editor modern WA Web mendengarkan event ini.
+    let handled = false;
+    try {
+        const ev = new InputEvent('beforeinput', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertLineBreak',
+            data: null
+        });
+        handled = !box.dispatchEvent(ev); // true berarti preventDefault dipanggil → editor handle
+    } catch (_) {}
+
+    if (!handled) {
+        // Fallback 1: execCommand insertLineBreak (sebagian Chromium support).
+        try {
+            const ok = document.execCommand('insertLineBreak', false, null);
+            if (ok) return;
+        } catch (_) {}
+
+        // Fallback 2: sisipkan <br> manual via Selection/Range API supaya tetap
+        // menghasilkan line break visual di contenteditable.
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const br = document.createElement('br');
+            range.insertNode(br);
+            range.setStartAfter(br);
+            range.setEndAfter(br);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            box.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertLineBreak' }));
+        }
+    }
 }
 
 function dispatchEnter(target) {
