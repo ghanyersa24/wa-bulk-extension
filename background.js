@@ -135,8 +135,7 @@ async function startBulk({ contacts, message, minDelay, maxDelay, media }) {
 
         if ((i + 1) % 5 === 0 && i + 1 < contacts.length) {
             const longBreak = randomDelay(60000, 180000);
-            setProgress('prog_break', [Math.round(longBreak / 1000)]);
-            const stepped = await sleepInterruptible(longBreak);
+            const stepped = await breakCountdown(longBreak);
             if (!stepped) break;
         }
     }
@@ -203,6 +202,16 @@ async function sleepInterruptible(ms) {
         if (stopRequested) return false;
         await sleep(Math.min(step, ms - elapsed));
         elapsed += step;
+    }
+    return true;
+}
+
+async function breakCountdown(ms) {
+    const totalSec = Math.round(ms / 1000);
+    for (let remaining = totalSec; remaining > 0; remaining--) {
+        if (stopRequested) return false;
+        setProgress('prog_break', [remaining]);
+        await sleep(1000);
     }
     return true;
 }
